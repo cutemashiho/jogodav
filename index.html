@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Jogo da velha</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@600&display=swap');
+
+  :root {
+    --color-bg: #e7bedc;
+    --color-text: #38023f;
+    --color-gray: #200459;
+    --color-primary: #46043b;
+    --color-board-bg: #17d86b;
+    --color-cell-bg: #3988f0;
+    --color-cell-hover: #d64c66;
+    --color-cell-active: #4b9a02;
+    --color-shadow: rgba(0,0,0,0.08);
+    --border-radius: 0.75rem;
+    --font-family: 'Poppins', sans-serif;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-family);
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 3rem 1rem;
+  }
+
+  main {
+    max-width: 400px;
+    width: 100%;
+    text-align: center;
+  }
+
+  h1 {
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: var(--color-primary);
+  }
+
+  .board {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    background: var(--color-board-bg);
+    padding: 1rem;
+    border-radius: var(--border-radius);
+    box-shadow: 0 4px 12px var(--color-shadow);
+  }
+
+  .cell {
+    background: var(--color-cell-bg);
+    border-radius: var(--border-radius);
+    box-shadow: 0 1px 4px var(--color-shadow);
+    font-size: 3rem;
+    font-weight: 700;
+    color: var(--color-primary);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    aspect-ratio: 1 / 1;
+    cursor: pointer;
+    user-select: none;
+    transition:
+      background-color 0.3s ease,
+      transform 0.2s ease;
+  }
+
+  .cell:hover {
+    background-color: var(--color-cell-hover);
+    transform: scale(1.05);
+  }
+
+  .cell.disabled {
+    cursor: default;
+    color: var(--color-gray);
+  }
+
+  button#resultBtn {
+    margin-top: 2rem;
+    background-color: var(--color-primary);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    font-size: 1.125rem;
+    font-weight: 600;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    box-shadow: 0 4px 8px var(--color-shadow);
+    transition:
+      background-color 0.3s ease,
+      transform 0.2s ease;
+  }
+
+  button#resultBtn:hover {
+    background-color: #374151;
+    transform: scale(1.05);
+  }
+
+  .status {
+    margin-top: 1rem;
+    font-size: 1.25rem;
+    color: var(--color-gray);
+    min-height: 1.5em;
+  }
+</style>
+</head>
+<body>
+<main>
+  <h2>Jogo da velha carnavalesco 🎉</h2>
+  <div class="board" role="grid" aria-label="Tabuleiro do jogo da velha">
+    <button class="cell" role="gridcell" aria-label="Empty cell" data-index="0" tabindex="0"></button>
+    <button class="cell" role="gridcell" aria-label="Empty cell" data-index="1" tabindex="0"></button>
+    <button class="cell" role="gridcell" aria-label="Empty cell" data-index="2" tabindex="0"></button>
+    <button class="cell" role="gridcell" aria-label="Empty cell" data-index="3" tabindex="0"></button>
+    <button class="cell" role="gridcell" aria-label="Empty cell" data-index="4" tabindex="0"></button>
+    <button class="cell" role="gridcell" aria-label="Empty cell" data-index="5" tabindex="0"></button>
+    <button class="cell" role="gridcell" aria-label="Empty cell" data-index="6" tabindex="0"></button>
+    <button class="cell" role="gridcell" aria-label="Empty cell" data-index="7" tabindex="0"></button>
+    <button class="cell" role="gridcell" aria-label="Empty cell" data-index="8" tabindex="0"></button>
+  </div>
+  <button id="resultBtn" type="button" aria-label="Mostrar o resultado do jogo">Mostrar Resultado</button>
+  <div class="status" aria-live="polite" aria-atomic="true"></div>
+</main>
+
+<script>
+  (() => {
+    const cells = document.querySelectorAll('.cell');
+    const resultBtn = document.getElementById('resultBtn');
+    const statusDiv = document.querySelector('.status');
+
+    let board = Array(9).fill(null);
+    let currentPlayer = 'X';
+    let gameActive = true;
+
+    const winningCombinations = [
+      [0,1,2],[3,4,5],[6,7,8], // rows
+      [0,3,6],[1,4,7],[2,5,8], // cols
+      [0,4,8],[2,4,6]           // diagonals
+    ];
+
+    function checkWinner() {
+      for (const [a, b, c] of winningCombinations) {
+        if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+          return board[a];
+        }
+      }
+      return null;
+    }
+
+    function isDraw() {
+      return board.every(cell => cell !== null);
+    }
+
+    function updateStatus() {
+      let winner = checkWinner();
+      if (winner) {
+        statusDiv.textContent = `Jogador ${winner} venceu!`;
+      } else if (isDraw()) {
+        statusDiv.textContent = 'Empate!';
+      } else {
+        statusDiv.textContent = `Turno do jogador ${currentPlayer}`;
+      }
+    }
+
+    function disableBoard() {
+      cells.forEach(cell => {
+        cell.classList.add('disabled');
+        cell.disabled = true;
+      });
+      gameActive = false;
+    }
+
+    function cellClick(e) {
+      const index = e.target.dataset.index;
+      if (board[index] || !gameActive) {
+        return;
+      }
+      board[index] = currentPlayer;
+      e.target.textContent = currentPlayer;
+      e.target.setAttribute('aria-label', `Célula preenchida com ${currentPlayer}`);
+      e.target.classList.add('disabled');
+      e.target.disabled = true;
+
+      const winner = checkWinner();
+      if (winner) {
+        updateStatus();
+        disableBoard();
+        return;
+      }
+
+      if (isDraw()) {
+        updateStatus();
+        disableBoard();
+        return;
+      }
+
+      currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+      updateStatus();
+    }
+
+    cells.forEach(cell => cell.addEventListener('click', cellClick));
+
+    resultBtn.addEventListener('click', () => {
+      if (!gameActive) {
+        updateStatus();
+        return;
+      }
+      const winner = checkWinner();
+      if (winner) {
+        statusDiv.textContent = `Jogador ${winner} venceu!`;
+        disableBoard();
+      } else if (isDraw()) {
+        statusDiv.textContent = 'Empate!';
+        disableBoard();
+      } else {
+        statusDiv.textContent = 'Jogo ainda em andamento.';
+      }
+    });
+
+    // Initial status message
+    updateStatus();
+  })();
+</script>
+</body>
+</html>
